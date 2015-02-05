@@ -3,18 +3,6 @@ _addon.author = 'smd111'
 _addon.command = 'gazecheck'
 _addon.commands = {'gzc'}
 _addon.version = '1.01'
-require 'luau'
-packets = require('packets')
-
-defaults = {}
-defaults.auto_point = false
-defaults.gaze_watch = true
-
-settings = config.load(defaults)_addon.name = 'Gaze_check'
-_addon.author = 'smd111'
-_addon.command = 'gazecheck'
-_addon.commands = {'gzc'}
-_addon.version = '1.01'
 
 require 'luau'
 packets = require('packets')
@@ -25,16 +13,21 @@ defaults.gaze_watch = true
 
 settings = config.load(defaults)
 
-gaze_attacks = {"Chaotic Eye","Blink of Peril","Cold Stare","Gerjis's Grip","Predatory Glare","Awful Eye","Baleful Gaze","Torpefying Charge","Blank Gaze",
-"Hex Eye","Petrogaze","Yawn","Baleful Gaze","Jettatura","Eternal Damnation","Afflicting Gaze","Shah Mat","Hypnosis","Mind Break","Terror Eye",
-"Mortal Ray","Chthonian Ray","Apocalyptic Ray","Petro Eyes","Belly Dance","Hypnotic Sway","Light of Penance","Numbing Glare","Tormentful Glare",
-"Torpid Glare","Torpefying Charge",}
+gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]="Awful Eye",[411]="Baleful Gaze",[438]="Hex Eye",[439]="Petro Gaze",
+[502]="Mortal Ray",[550]="Hypnosis",[551]="Mind Break",[577]="Jettatura",[586]="Blank Gaze",[589]="Mortal Ray",[648]="Petro Eyes",[653]="Chaotic Eye",
+[785]="Light of Penance",[1111]="Numbing Glare",[1113]="Tormentful Glare",[1115]="Torpid Glare",[1138]="Hypnosis",[1139]="Mind Break",[1174]="Petro Eyes",
+[1184]="Petro Eyes",[1359]="Chthonian Ray",[1360]="Apocalyptic Ray",[1563]="Cold Stare",[1603]="Baleful Gaze",[1680]="Predatory Glare",[1713]="Yawn",
+[1759]="Hypnotic Sway",[1762]="Belly Dance",[1862]="Awful Eye",[1883]="Mortal Ray",[1950]="Belly Dance",[2111]="Eternal Damnation",[2155]="Torpefying Charge",
+[2209]="Blink of Peril",[2424]="Terror Eye",[2570]="Afflicting Gaze",[2814]="Yawn",[2828]="Jettatura",[2776]="Shah Mat",[3358]="Blank Gaze",[1322]="Gerjis' Grip",}
 
 gaze = false
 trigered_actor = 0
-windower.register_event('load',function ()
+function display()
     print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
         ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255)))
+end
+windower.register_event('load',function ()
+    display()
 end)
 
 function check_target_id(packet) --checks to see if player is one of the targets
@@ -49,7 +42,7 @@ function check_target_id(packet) --checks to see if player is one of the targets
 end
 function check_target_action(packet)
     for i,v in pairs(packet) do
-        if string.match(i, 'Target %d+ Action %d+ Param') and table.contains(gaze_attacks,res.monster_abilities[v].en) then
+        if string.match(i, 'Target %d+ Action %d+ Param') and table.contains(gaze_attacks,v) then
             return true
         end
     end
@@ -66,7 +59,7 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
                     windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
                 end
             elseif packet['Actor'] == trigered_actor and packet['Category'] == 11 and settings.gaze_watch then
-                if table.contains(gaze_attacks,res.monster_abilities[packet['Param']].en) then
+                if table.contains(gaze_attacks,packet['Param']) then
                     gaze = false
                     trigered_actor = 0
                     windower.ffxi.turn(windower.ffxi.get_mob_by_target('t').facing+math.pi)
@@ -76,11 +69,15 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
     end
 end)
 
-function getAngle(x1,y1,x2,y2)
-    local deltaY = y2 - y1
-    local deltaX = x2 - x1
+function getAngle()
+    local Px = windower.ffxi.get_mob_by_target('me').x --gets player x pos
+    local Py = windower.ffxi.get_mob_by_target('me').y --gets player y pos
+    local Mx = windower.ffxi.get_mob_by_target('t').x --gets target x pos
+    local My = windower.ffxi.get_mob_by_target('t').y --gets target y pos
+    local deltaY = Py - My --subtracts target y pos from player y pos
+    local deltaX = Px - Mx --subtracts target x pos from player x pos
 
-    local angleInDegrees = (math.atan2( deltaY, deltaX) * 180 / math.pi)*-1
+    local angleInDegrees = (math.atan2( deltaY, deltaX) * 180 / math.pi)*-1 
 
     local mult = 10^0
 
@@ -88,15 +85,11 @@ function getAngle(x1,y1,x2,y2)
 end
 
 windower.register_event('prerender', function()
-    if not windower.ffxi.get_info().logged_in or not windower.ffxi.get_player() then
+    if not windower.ffxi.get_info().logged_in or not windower.ffxi.get_player() then -- stops prender if not loged in yet
         return
     end
     if windower.ffxi.get_player().in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t') and not gaze then
-        local Px = windower.ffxi.get_mob_by_target('me').x
-        local Py = windower.ffxi.get_mob_by_target('me').y
-        local Mx = windower.ffxi.get_mob_by_target('t').x
-        local My = windower.ffxi.get_mob_by_target('t').y
-        windower.ffxi.turn((getAngle(Mx,My,Px,Py)+180):radian())--gets angle to the target
+        windower.ffxi.turn((getAngle()+180):radian())--gets angle to the target
     end
 end)
 
@@ -106,84 +99,6 @@ windower.register_event('addon command', function(command)
     elseif command == 'auto_gaze' then
         settings.auto_point = not settings.gaze_watch
     end
-    print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
-        ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255)))
-    config.save(settings, 'all')
-end)
-
-
-gaze_attacks = {"Chaotic Eye","Blink of Peril","Cold Stare","Gerjis's Grip","Predatory Glare","Awful Eye","Baleful Gaze","Torpefying Charge","Blank Gaze",
-"Hex Eye","Petrogaze","Yawn","Baleful Gaze","Jettatura","Eternal Damnation","Afflicting Gaze","Shah Mat","Hypnosis","Mind Break","Terror Eye",
-"Mortal Ray","Chthonian Ray","Apocalyptic Ray","Petro Eyes","Belly Dance","Hypnotic Sway","Light of Penance","Numbing Glare","Tormentful Glare",
-"Torpid Glare",'Torpefying Charge',}
-
-gaze = false
-trigered_actor = 0
-windower.register_event('load',function ()
-    print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
-        ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255)))
-end)
-
-function check_target_id(packet)
-    for i,v in pairs(packet) do
-        if i:startswith('Target') and i:endswith('ID') then
-            if windower.ffxi.get_player().id == v then
-                return true
-            end
-        end
-    end
-    return false
-end
-windower.register_event('incoming chunk', function(id, data, modified, injected, blocked)
-    if id == 0x028 then
-        local packet = packets.parse('incoming', data)
-        if windower.ffxi.get_player().in_combat and windower.ffxi.get_mob_by_target('t')then
-            if packet['Category'] == 7 and check_target_id(packet) and settings.gaze_watch then
-                if table.contains(gaze_attacks,res.monster_abilities[packet['Target 1 Action 1 Param']].en) then
-                    gaze = true
-                    trigered_actor = packet['Actor']
-                    windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
-                end
-            elseif packet['Actor'] == trigered_actor and packet['Category'] == 11 and settings.gaze_watch then
-                if table.contains(gaze_attacks,res.monster_abilities[packet['Param']].en) then
-                    gaze = false
-                    windower.ffxi.turn(windower.ffxi.get_mob_by_target('t').facing+math.pi)
-                end
-            end
-        end
-    end
-end)
-
-function getAngle(x1,y1,x2,y2)
-    local deltaY = y2 - y1
-    local deltaX = x2 - x1
-
-    local angleInDegrees = (math.atan2( deltaY, deltaX) * 180 / math.pi)*-1
-
-    local mult = 10^0
-
-    return math.floor(angleInDegrees * mult + 0.5) / mult
-end
-windower.register_event('prerender', function()
-    if not windower.ffxi.get_info().logged_in or not windower.ffxi.get_player() then
-        return
-    end
-    if windower.ffxi.get_player().in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t') and not gaze then
-        local Px = windower.ffxi.get_mob_by_target('me').x
-        local Py = windower.ffxi.get_mob_by_target('me').y
-        local Mx = windower.ffxi.get_mob_by_target('t').x
-        local My = windower.ffxi.get_mob_by_target('t').y
-        windower.ffxi.turn((getAngle(Mx,My,Px,Py)+180):radian())
-    end
-end)
-
-windower.register_event('addon command', function(command)
-    if command == 'auto_point' then
-        settings.auto_point = not settings.auto_point
-    elseif command == 'auto_gaze' then
-        settings.auto_point = not settings.gaze_watch
-    end
-    print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
-        ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255)))
+    display()
     config.save(settings, 'all')
 end)
