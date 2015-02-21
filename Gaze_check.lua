@@ -22,12 +22,12 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 
 gaze = false
 trigered_actor = 0
-function display()
+function Print_Settings()
     print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
         ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255)))
 end
 windower.register_event('load',function ()
-    display()
+    Print_Settings()
 end)
 
 function check_target_id(packet) --checks to see if player is one of the targets
@@ -42,7 +42,7 @@ function check_target_id(packet) --checks to see if player is one of the targets
 end
 function check_target_action(packet)
     for i,v in pairs(packet) do
-        if string.match(i, 'Target %d+ Action %d+ Param') and table.contains(gaze_attacks,v) then
+        if string.match(i, 'Target %d+ Action %d+ Param') and gaze_attacks[v] then
             return true
         end
     end
@@ -58,8 +58,8 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
                     trigered_actor = packet['Actor']
                     windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
                 end
-            elseif packet['Actor'] == trigered_actor and packet['Category'] == 11 and settings.gaze_watch then
-                if table.contains(gaze_attacks,packet['Param']) then
+            elseif packet['Actor'] == trigered_actor and packet['Category'] == 11 and settings.gaze_watch and gaze then
+                if gaze_attacks[packet['Param']] then
                     gaze = false
                     trigered_actor = 0
                     windower.ffxi.turn(windower.ffxi.get_mob_by_target('t').facing+math.pi)
@@ -76,11 +76,8 @@ function getAngle()
     local My = windower.ffxi.get_mob_by_target('t').y --gets target y pos
     local deltaY = Py - My --subtracts target y pos from player y pos
     local deltaX = Px - Mx --subtracts target x pos from player x pos
-
     local angleInDegrees = (math.atan2( deltaY, deltaX) * 180 / math.pi)*-1 
-
     local mult = 10^0
-
     return math.floor(angleInDegrees * mult + 0.5) / mult
 end
 
@@ -88,7 +85,7 @@ windower.register_event('prerender', function()
     if not windower.ffxi.get_info().logged_in or not windower.ffxi.get_player() then -- stops prender if not loged in yet
         return
     end
-    if windower.ffxi.get_player().in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t') and not gaze then
+    if (windower.ffxi.get_player().in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t')) and not gaze then
         windower.ffxi.turn((getAngle()+180):radian())--gets angle to the target
     end
 end)
@@ -99,6 +96,11 @@ windower.register_event('addon command', function(command)
     elseif command == 'auto_gaze' then
         settings.auto_point = not settings.gaze_watch
     end
-    display()
-    config.save(settings, 'all')
+    if command then
+        Print_Settings()
+        config.save(settings, 'all')
+    end
 end)
+function PrintSomething(_index)
+    print( _index, party[1][_index] ) 
+end
