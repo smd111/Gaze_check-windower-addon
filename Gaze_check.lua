@@ -18,7 +18,8 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [785]="Light of Penance",[1111]="Numbing Glare",[1113]="Tormentful Glare",[1115]="Torpid Glare",[1138]="Hypnosis",[1139]="Mind Break",[1174]="Petro Eyes",
 [1184]="Petro Eyes",[1359]="Chthonian Ray",[1360]="Apocalyptic Ray",[1563]="Cold Stare",[1603]="Baleful Gaze",[1680]="Predatory Glare",[1713]="Yawn",
 [1759]="Hypnotic Sway",[1762]="Belly Dance",[1862]="Awful Eye",[1883]="Mortal Ray",[1950]="Belly Dance",[2111]="Eternal Damnation",[2155]="Torpefying Charge",
-[2209]="Blink of Peril",[2424]="Terror Eye",[2570]="Afflicting Gaze",[2814]="Yawn",[2828]="Jettatura",[2776]="Shah Mat",[3358]="Blank Gaze",[1322]="Gerjis' Grip",}
+[2209]="Blink of Peril",[2424]="Terror Eye",[2570]="Afflicting Gaze",[2814]="Yawn",[2828]="Jettatura",[2776]="Shah Mat",[3358]="Blank Gaze",[1322]="Gerjis' Grip",
+[4038]="Petro Eyes",[3984]="Hex Eye",[3916]="Jettatura",[3898]="Chaotic Eye",}
 
 gaze = false
 trigered_actor = 0
@@ -52,7 +53,7 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
     if id == 0x028 then
         local packet = packets.parse('incoming', data)
         if windower.ffxi.get_player().in_combat and windower.ffxi.get_mob_by_target('t')then
-            if packet['Category'] == 7 and check_target_id(packet) and settings.gaze_watch then
+            if packet['Category'] == 7 and check_target_id(packet) and settings.gaze_watch and not gaze then
                 if check_target_action(packet) then
                     gaze = true
                     trigered_actor = packet['Actor']
@@ -62,7 +63,7 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
                 if gaze_attacks[packet['Param']] then
                     gaze = false
                     trigered_actor = 0
-                    windower.ffxi.turn(windower.ffxi.get_mob_by_target('t').facing+math.pi)
+                    windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
                 end
             end
         end
@@ -101,6 +102,3 @@ windower.register_event('addon command', function(command)
         config.save(settings, 'all')
     end
 end)
-function PrintSomething(_index)
-    print( _index, party[1][_index] ) 
-end
