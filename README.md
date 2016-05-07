@@ -11,4 +11,6 @@ auto_point -- will toggle on or off if you automaticaly turn twards claimed mob
 
 auto_gaze  -- will toggle on or off if you automaticaly turn away from mobs that use gaze attacks
 
+auto_perm_gaze  -- will toggle on or off if you automaticaly turn away from mobs that use permanent gaze attacks
+
 Example: gzc auto_point
