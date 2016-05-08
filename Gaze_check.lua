@@ -63,9 +63,7 @@ end
 function check_target_action(packet)
     for i,v in pairs(packet) do
         if string.match(i, 'Target %d+ Action %d+ Param') then
-            if settings.gaze_watch and gaze_attacks[v] then
-                return true
-            elseif settings.perm_gaze_watch and perm_gaze_attacks[v] then
+            if (settings.gaze_watch and gaze_attacks[v]) or (settings.perm_gaze_watch and perm_gaze_attacks[v]) then
                 return true
             end
         end
@@ -76,18 +74,10 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
     if id == 0x028 then
         local packet = packets.parse('incoming', data)
         if windower.ffxi.get_player().in_combat and windower.ffxi.get_mob_by_target('t') then
-            if packet['Category'] == 7 and check_target_id(packet) then
-                if check_target_action(packet) then
-                    gaze = true
-                    trigered_actor = packet['Actor']
-                    windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
-                end
-            elseif packet['Category'] == 7 and check_facing() then
-                if check_target_action(packet) then
-                    gaze = true
-                    trigered_actor = packet['Actor']
-                    windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
-                end
+            if packet['Category'] == 7 and (check_target_id(packet) or check_facing()) and check_target_action(packet) then
+                gaze = true
+                trigered_actor = packet['Actor']
+                windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
             elseif packet['Actor'] == trigered_actor and packet['Category'] == 11 and gaze then
                 if settings.gaze_watch and gaze_attacks[packet['Param']] then
                     gaze = false
@@ -135,6 +125,3 @@ windower.register_event('addon command', function(command)
         config.save(settings, 'all')
     end
 end)
-function PrintSomething(_index)
-    print( _index, party[1][_index] ) 
-end
