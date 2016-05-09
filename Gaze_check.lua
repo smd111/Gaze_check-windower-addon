@@ -92,11 +92,13 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
         if packet.Index == perm_trigered_actor then
             local effect = data:unpack('b8', 43)
             if mob_type == "Peiste" and (data:unpack('b8', 43) == 4 or packet['Mask'] == 0x20) then
+                gaze = false
                 perm_gaze = false
                 perm_trigered_actor = 0
                 mob_type = ""
                 windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
             elseif mob_type == "Caturae" and (data:unpack('b8', 43) == 4 or data:unpack('b8', 43) == 6 or packet['Mask'] == 0x20) then
+                gaze = false
                 perm_gaze = false
                 perm_trigered_actor = 0
                 mob_type = ""
@@ -120,7 +122,6 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
                     end
                 elseif settings.perm_gaze_watch and perm_gaze_attacks[packet['Param']] then
                     local actor_index = windower.ffxi.get_mob_by_id(packet['Actor']).index
-                    gaze = false
                     trigered_actor = 0
                     perm_trigered_actor = actor_index
                 end
