@@ -1,5 +1,5 @@
 _addon.name = 'Gaze_check'
-_addon.author = 'smd111'
+_addon.author = 'smd111/Kenshi'
 _addon.command = 'gazecheck'
 _addon.commands = {'gzc'}
 _addon.version = '1.01'
@@ -26,7 +26,10 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
 
 gaze = false
+perm_gaze = false
 trigered_actor = 0
+perm_trigered_actor = 0
+mob_type = ""
 function Print_Settings()
     print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
         ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
@@ -60,10 +63,23 @@ function check_facing()
     end
     return false
 end
+function permGazeTrue()
+    perm_gaze = true
+    return perm_gaze
+end
 function check_target_action(packet)
     for i,v in pairs(packet) do
         if string.match(i, 'Target %d+ Action %d+ Param') then
-            if (settings.gaze_watch and gaze_attacks[v]) or (settings.perm_gaze_watch and perm_gaze_attacks[v]) then
+            if settings.gaze_watch and gaze_attacks[v] then
+                return true
+            elseif settings.perm_gaze_watch and perm_gaze_attacks[v] then
+                if T{2156, 2392}:contains(v) then
+                    mob_type = "Peiste"
+                    coroutine.schedule(permGazeTrue, 3)
+                elseif T{2776}:contains(v) then
+                    mob_type = "Caturae"
+                    coroutine.schedule(permGazeTrue, 6)
+                end
                 return true
             end
         end
@@ -71,6 +87,23 @@ function check_target_action(packet)
     return false
 end
 windower.register_event('incoming chunk', function(id, data, modified, injected, blocked)
+    if id == 0x00E and settings.perm_gaze_watch and perm_gaze then
+        local packet = packets.parse('incoming', data)
+        if packet.Index == perm_trigered_actor then
+            local effect = data:unpack('b8', 43)
+            if mob_type == "Peiste" and (data:unpack('b8', 43) == 4 or packet['Mask'] == 0x20) then
+                perm_gaze = false
+                perm_trigered_actor = 0
+                mob_type = ""
+                windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
+            elseif mob_type == "Caturae" and (data:unpack('b8', 43) == 4 or data:unpack('b8', 43) == 6 or packet['Mask'] == 0x20) then
+                perm_gaze = false
+                perm_trigered_actor = 0
+                mob_type = ""
+                windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
+            end
+        end
+    end
     if id == 0x028 then
         local packet = packets.parse('incoming', data)
         if windower.ffxi.get_player().in_combat and windower.ffxi.get_mob_by_target('t') then
@@ -82,9 +115,14 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
                 if settings.gaze_watch and gaze_attacks[packet['Param']] then
                     gaze = false
                     trigered_actor = 0
-                    windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
+                    if not perm_gaze then
+                        windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
+                    end
                 elseif settings.perm_gaze_watch and perm_gaze_attacks[packet['Param']] then
+                    local actor_index = windower.ffxi.get_mob_by_id(packet['Actor']).index
+                    gaze = false
                     trigered_actor = 0
+                    perm_trigered_actor = actor_index
                 end
             end
         end
@@ -107,7 +145,7 @@ windower.register_event('prerender', function()
     if not windower.ffxi.get_info().logged_in or not windower.ffxi.get_player() then -- stops prender if not loged in yet
         return
     end
-    if (windower.ffxi.get_player().in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t')) and not gaze then
+    if (windower.ffxi.get_player().in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t')) and not gaze and not perm_gaze then
         windower.ffxi.turn((getAngle()+180):radian())--gets angle to the target
     end
 end)
