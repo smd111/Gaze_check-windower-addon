@@ -65,7 +65,6 @@ function check_facing()
 end
 function permGazeTrue()
     perm_gaze = true
-    return perm_gaze
 end
 function check_target_action(packet)
     for i,v in pairs(packet) do
