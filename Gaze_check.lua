@@ -21,7 +21,7 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [1184]="Petro Eyes",[1322]="Gerjis' Grip",[1359]="Chthonian Ray",[1360]="Apocalyptic Ray",[1563]="Cold Stare",[1603]="Baleful Gaze",[1680]="Predatory Glare",
 [1713]="Yawn",[1759]="Hypnotic Sway",[1762]="Belly Dance",[1862]="Awful Eye",[1883]="Mortal Ray",[1950]="Belly Dance",[2111]="Eternal Damnation",
 [2155]="Torpefying Charge",[2209]="Blink of Peril",[2424]="Terror Eye",[2534]="Minax Glare",[2570]="Afflicting Gaze",[2768]="Deathly Glare",[2814]="Yawn",[2828]="Jettatura",
-[3031]="Sylvan Slumber",[3032]="Crushing Gaze",[3358]="Blank Gaze",[3760]="Beguiling Gaze",[3898]="Chaotic Eye",[3916]="Jettatura",[3984]="Hex Eye",[4038]="Petro Eyes"}
+[3031]="Sylvan Slumber",[3032]="Crushing Gaze",[3358]="Blank Gaze",[3760]="Beguiling Gaze",[3898]="Chaotic Eye",[3916]="Jettatura",[4036]="Mortal Ray"}
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
 
@@ -38,7 +38,13 @@ end
 windower.register_event('load',function ()
     Print_Settings()
 end)
-
+function pet_check(packet)
+    local actor = windower.ffxi.get_mob_by_id(packet['Actor'])
+    if actor.index > 1024 then
+        return true
+    end
+    return false
+end
 function check_target_id(packet) --checks to see if player is one of the targets
     for i,v in pairs(packet) do
         if string.match(i, 'Target %d+ ID') then
@@ -49,16 +55,16 @@ function check_target_id(packet) --checks to see if player is one of the targets
     end
     return false
 end
-function check_facing()
-    local target = windower.ffxi.get_mob_by_target('t')
+function check_facing(packet)
+    local actor = windower.ffxi.get_mob_by_id(packet['Actor'])
     local player = windower.ffxi.get_mob_by_target('me')
-    local dir_target = V{player.x, player.y} - V{target.x, target.y}
-    local dir_player = V{target.x, target.y} - V{player.x, player.y}
+    local dir_actor = V{player.x, player.y} - V{actor.x, actor.y}
+    local dir_player = V{actor.x, actor.y} - V{player.x, player.y}
     local player_heading = V{}.from_radian(player.facing)
-    local target_heading = V{}.from_radian(target.facing)
+    local actor_heading = V{}.from_radian(actor.facing)
     local player_angle = V{}.angle(dir_player, player_heading):degree():abs()
-    local target_angle = V{}.angle(dir_target, target_heading):degree():abs()
-    if player_angle < 90 and target_angle < 90 then
+    local actor_angle = V{}.angle(dir_actor, actor_heading):degree():abs()
+    if player_angle < 90 and actor_angle < 90 then
         return true
     end
     return false
@@ -108,7 +114,7 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
     if id == 0x028 then
         local packet = packets.parse('incoming', data)
         if windower.ffxi.get_player().in_combat and windower.ffxi.get_mob_by_target('t') then
-            if packet['Category'] == 7 and (check_target_id(packet) or check_facing()) and check_target_action(packet) then
+            if packet['Category'] == 7 and not pet_check(packet) and (check_target_id(packet) or check_facing(packet)) and check_target_action(packet) then
                 gaze = true
                 trigered_actor = packet['Actor']
                 windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
