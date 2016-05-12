@@ -32,6 +32,7 @@ perm_gaze = false
 trigered_actor = 0
 perm_trigered_actor = 0
 mob_type = ""
+test_mode = false
 function Print_Settings()
     print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
         ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
@@ -88,6 +89,8 @@ function check_target_action(packet)
                     coroutine.schedule(permGazeTrue, 6)
                 end
                 return true
+            elseif test_mode then
+                windower.add_to_chat(7,"Mob ability ID = "..tostring(v))
             end
         end
     end
@@ -119,18 +122,17 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
             if packet['Category'] == 7 and not pet_check(packet) and (check_target_id(packet) or check_facing(packet)) and check_target_action(packet) then
                 gaze = true
                 trigered_actor = packet['Actor']
-                windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing)
-            elseif packet['Actor'] == trigered_actor and packet['Category'] == 11 and gaze then
+                windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing) 
+            elseif packet['Category'] == 11 and packet['Actor'] == trigered_actor and gaze then
                 if settings.gaze_watch and gaze_attacks[packet['Param']] then
                     gaze = false
-                    trigered_actor = 0
                     if not perm_gaze then
+                        trigered_actor = 0
                         windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
                     end
                 elseif settings.perm_gaze_watch and perm_gaze_attacks[packet['Param']] then
-                    local actor_index = windower.ffxi.get_mob_by_id(packet['Actor']).index
                     trigered_actor = 0
-                    perm_trigered_actor = actor_index
+                    perm_trigered_actor = windower.ffxi.get_mob_by_id(packet['Actor']).index
                 end
             end
         end
@@ -165,6 +167,8 @@ windower.register_event('addon command', function(command)
         settings.gaze_watch = not settings.gaze_watch
     elseif command == 'auto_perm_gaze' then
         settings.perm_gaze_watch = not settings.perm_gaze_watch
+    elseif command == 'test_mode' then
+        test_mode = not test_mode
     end
     if command then
         Print_Settings()
