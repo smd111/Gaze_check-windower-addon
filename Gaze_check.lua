@@ -27,6 +27,7 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
 perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3},["Caturae"]={skills=T{2776},delay=6},}
+perm_gaze_end_control = {["Peiste"]={[1]=4,[2]=4},["Caturae"]={[1]=4,[2]=6},}
 
 gaze = false
 perm_gaze = false
@@ -102,13 +103,8 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
         local packet = packets.parse('incoming', data)
         if packet.Index == perm_trigered_actor then
             local effect = data:unpack('b8', 43)
-            local stop_gaze = false
-            if mob_type == "Peiste" and (data:unpack('b8', 43) == 4 or packet['Mask'] == 0x20) then
-                stop_gaze = true
-            elseif mob_type == "Caturae" and (data:unpack('b8', 43) == 4 or data:unpack('b8', 43) == 6 or packet['Mask'] == 0x20) then
-                stop_gaze = true
-            end
-            if stop_gaze then
+            local Table = perm_gaze_end_control[mob_type]
+            if Table and (effect == Table[1] or effect == Table[2] or packet['Mask'] == 0x20) then
                 gaze = false
                 perm_gaze = false
                 perm_trigered_actor = 0
