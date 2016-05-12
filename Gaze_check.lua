@@ -26,8 +26,8 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [3916]="Jettatura",[4036]="Mortal Ray",}
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
-perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3},["Caturae"]={skills=T{2776},delay=6},}
-perm_gaze_end_control = {["Peiste"]={[1]=4,[2]=4},["Caturae"]={[1]=4,[2]=6},}
+perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3,ender={[1]=4,[2]=4}},
+                     ["Caturae"]={skills=T{2776},delay=6,ender={[1]=4,[2]=4}},}
 
 gaze = false
 perm_gaze = false
@@ -103,8 +103,8 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
         local packet = packets.parse('incoming', data)
         if packet.Index == perm_trigered_actor then
             local effect = data:unpack('b8', 43)
-            local Table = perm_gaze_end_control[mob_type]
-            if Table and (effect == Table[1] or effect == Table[2] or packet['Mask'] == 0x20) then
+            local Table = perm_gaze_control[mob_type]
+            if Table and (effect == Table.ender[1] or effect == Table.ender[2] or packet['Mask'] == 0x20) then
                 gaze = false
                 perm_gaze = false
                 perm_trigered_actor = 0
@@ -123,8 +123,8 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
             elseif packet['Category'] == 11 and packet['Actor'] == trigered_actor and gaze then
                 if settings.gaze_watch and gaze_attacks[packet['Param']] then
                     gaze = false
+                    trigered_actor = 0
                     if not perm_gaze then
-                        trigered_actor = 0
                         windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
                     end
                 elseif settings.perm_gaze_watch and perm_gaze_attacks[packet['Param']] then
