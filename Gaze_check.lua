@@ -26,6 +26,7 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [3916]="Jettatura",[4036]="Mortal Ray",}
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
+perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3},["Caturae"]={skills=T{2776},delay=6},}
 
 gaze = false
 perm_gaze = false
@@ -81,12 +82,12 @@ function check_target_action(packet)
             if settings.gaze_watch and gaze_attacks[v] then
                 return true
             elseif settings.perm_gaze_watch and perm_gaze_attacks[v] then
-                if T{2156, 2392}:contains(v) then
-                    mob_type = "Peiste"
-                    coroutine.schedule(permGazeTrue, 3)
-                elseif T{2776}:contains(v) then
-                    mob_type = "Caturae"
-                    coroutine.schedule(permGazeTrue, 6)
+                for mob,tbl in pairs(perm_gaze_control) do
+                    if tbl.skills:contains(v) then
+                        mob_type = mob
+                        coroutine.schedule(permGazeTrue, tbl.delay)
+                        break
+                    end
                 end
                 return true
             elseif test_mode then
