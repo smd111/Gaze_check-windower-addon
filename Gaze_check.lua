@@ -118,13 +118,13 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
             elseif packet['Category'] == 11 and packet['Actor'] == trigered_actor and gaze then
                 if settings.gaze_watch and gaze_attacks[packet['Param']] then
                     gaze = false
+                    if not perm_gaze then
+                        windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
+                    end
                 elseif settings.perm_gaze_watch and perm_gaze_attacks[packet['Param']] then
                     perm_trigered_actor = windower.ffxi.get_mob_by_id(packet['Actor']).index
                 end
                 trigered_actor = 0
-                if not perm_gaze then
-                    windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
-                end
             end
         end
     end
