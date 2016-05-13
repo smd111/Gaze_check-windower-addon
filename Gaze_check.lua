@@ -2,7 +2,7 @@ _addon.name = 'Gaze_check'
 _addon.author = 'smd111/Kenshi'
 _addon.command = 'gazecheck'
 _addon.commands = {'gzc'}
-_addon.version = '1.01'
+_addon.version = '2.0'
 
 require 'luau'
 require('vectors')
@@ -15,7 +15,6 @@ defaults.perm_gaze_watch = false
 
 settings = config.load(defaults)
 
-
 gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]="Awful Eye",[411]="Baleful Gaze",[438]="Hex Eye",[439]="Petro Gaze",
 [502]="Mortal Ray",[550]="Hypnosis",[551]="Mind Break",[577]="Jettatura",[586]="Blank Gaze",[589]="Mortal Ray",[648]="Petro Eyes",[653]="Chaotic Eye",
 [785]="Light of Penance",[1111]="Numbing Glare",[1113]="Tormentful Glare",[1115]="Torpid Glare",[1138]="Hypnosis",[1139]="Mind Break",[1174]="Petro Eyes",
@@ -26,8 +25,7 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [3916]="Jettatura",[4036]="Mortal Ray",}
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
-perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3,ender={[1]=4,[2]=4}},
-                     ["Caturae"]={skills=T{2776},delay=6,ender={[1]=4,[2]=4}},}
+perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3,ender=T{4}},["Caturae"]={skills=T{2776},delay=6,ender=T{4,6}},}
 
 gaze = false
 perm_gaze = false
@@ -36,15 +34,16 @@ perm_trigered_actor = 0
 mob_type = ""
 test_mode = false
 function Print_Settings()
-    print('Gaze_check - auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
+    print('Gaze_check: auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
         ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
-        ' / auto_perm_gaze = '..(settings.perm_gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255)))
+        ' / auto_perm_gaze = '..(settings.perm_gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
+        ''..(test_mode and ('\nGaze_check:   test_mode on'):text_color(0,255,0) or ''))
 end
 windower.register_event('load',function ()
     Print_Settings()
 end)
-function pet_check(packet)
-    local actor = windower.ffxi.get_mob_by_id(packet['Actor'])
+function pet_check(index)
+    local actor = windower.ffxi.get_mob_by_id(index)
     if actor.index > 1024 then
         return true
     end
@@ -60,16 +59,13 @@ function check_target_id(packet) --checks to see if player is one of the targets
     end
     return false
 end
-function check_facing(packet)
-    local actor = windower.ffxi.get_mob_by_id(packet['Actor'])
+function check_facing(index)
+    local actor = windower.ffxi.get_mob_by_id(index)
     local player = windower.ffxi.get_mob_by_target('me')
-    local dir_actor = V{player.x, player.y} - V{actor.x, actor.y}
-    local dir_player = V{actor.x, actor.y} - V{player.x, player.y}
-    local player_heading = V{}.from_radian(player.facing)
-    local actor_heading = V{}.from_radian(actor.facing)
-    local player_angle = V{}.angle(dir_player, player_heading):degree():abs()
-    local actor_angle = V{}.angle(dir_actor, actor_heading):degree():abs()
-    if player_angle < 90 and actor_angle < 90 then
+    local dir = {actor=(V{player.x, player.y} - V{actor.x, actor.y}),player=(V{actor.x, actor.y} - V{player.x, player.y})}
+    local heading = {actor=(V{}.from_radian(actor.facing)),player=(V{}.from_radian(player.facing))}
+    local angle = {actor=(V{}.angle(dir.actor, heading.actor):degree():abs()),player=(V{}.angle(dir.player, heading.player):degree():abs())}
+    if angle.player < 90 and angle.actor < 90 then
         return true
     end
     return false
@@ -102,9 +98,8 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
     if id == 0x00E and settings.perm_gaze_watch and perm_gaze then
         local packet = packets.parse('incoming', data)
         if packet.Index == perm_trigered_actor then
-            local effect = data:unpack('b8', 43)
-            local Table = perm_gaze_control[mob_type]
-            if Table and (effect == Table.ender[1] or effect == Table.ender[2] or packet['Mask'] == 0x20) then
+            local gaze_table = perm_gaze_control[mob_type]
+            if gaze_table and (gaze_table.ender:contains(data:unpack('b8', 43)) or packet['Mask'] == 0x20) then
                 gaze = false
                 perm_gaze = false
                 perm_trigered_actor = 0
@@ -116,20 +111,19 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
     if id == 0x028 then
         local packet = packets.parse('incoming', data)
         if windower.ffxi.get_player().in_combat and windower.ffxi.get_mob_by_target('t') then
-            if packet['Category'] == 7 and not pet_check(packet) and (check_target_id(packet) or check_facing(packet)) and check_target_action(packet) then
+            if packet['Category'] == 7 and not pet_check(packet['Actor']) and (check_target_id(packet) or check_facing(packet['Actor'])) and check_target_action(packet) then
                 gaze = true
                 trigered_actor = packet['Actor']
                 windower.ffxi.turn(windower.ffxi.get_mob_by_id(packet['Actor']).facing) 
             elseif packet['Category'] == 11 and packet['Actor'] == trigered_actor and gaze then
                 if settings.gaze_watch and gaze_attacks[packet['Param']] then
                     gaze = false
-                    trigered_actor = 0
-                    if not perm_gaze then
-                        windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
-                    end
                 elseif settings.perm_gaze_watch and perm_gaze_attacks[packet['Param']] then
-                    trigered_actor = 0
                     perm_trigered_actor = windower.ffxi.get_mob_by_id(packet['Actor']).index
+                end
+                trigered_actor = 0
+                if not perm_gaze then
+                    windower.ffxi.turn:schedule(1,windower.ffxi.get_mob_by_target('t').facing+math.pi)
                 end
             end
         end
@@ -137,13 +131,10 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
 end)
 
 function getAngle()
-    local Px = windower.ffxi.get_mob_by_target('me').x --gets player x pos
-    local Py = windower.ffxi.get_mob_by_target('me').y --gets player y pos
-    local Mx = windower.ffxi.get_mob_by_target('t').x --gets target x pos
-    local My = windower.ffxi.get_mob_by_target('t').y --gets target y pos
-    local deltaY = Py - My --subtracts target y pos from player y pos
-    local deltaX = Px - Mx --subtracts target x pos from player x pos
-    local angleInDegrees = (math.atan2( deltaY, deltaX) * 180 / math.pi)*-1 
+    local P = windower.ffxi.get_mob_by_target('me') --get player
+    local M = windower.ffxi.get_mob_by_target('t') --get target
+    local delta = {Y = (P.y - M.y),X = (P.x - M.x)} --subtracts target pos from player pos
+    local angleInDegrees = (math.atan2( delta.Y, delta.X) * 180 / math.pi)*-1 
     local mult = 10^0
     return math.floor(angleInDegrees * mult + 0.5) / mult
 end
