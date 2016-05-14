@@ -16,9 +16,10 @@ auto_perm_gaze  -- will toggle on or off if you automaticaly turn away from mobs
 test_mode  -- will toggle on or off test mode to show in chat ability id's that do not trigger as a gaze(this is the info we need if there is a gaze that does not get processed)
 
            -- when reporting this info example:
-
            --       Missing Gaze attacks
-
            --       ID=292 NAME=Blank Gaze
+           
+           -- if its a long duration gaze attack please include the
+           --       Perm Gaze end data = 
 
 Example: gzc auto_point
