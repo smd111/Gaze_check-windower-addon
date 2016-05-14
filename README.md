@@ -19,7 +19,7 @@ test_mode  -- will toggle on or off test mode to show in chat ability id's that 
            --       Missing Gaze attacks
            --       ID=292 NAME=Blank Gaze
            
-           -- if its a long duration gaze attack please include the
+           -- if its a long duration(longer then the time it takes to use the ability) gaze attack please include
            --       Perm Gaze end data = 
 
 Example: gzc auto_point
