@@ -2,16 +2,13 @@ _addon.name = 'Gaze_check'
 _addon.author = 'smd111/Kenshi'
 _addon.command = 'gazecheck'
 _addon.commands = {'gzc'}
-_addon.version = '2.0'
+_addon.version = '2.01'
 
 require 'luau'
 require('vectors')
 packets = require('packets')
 
-defaults = {}
-defaults.auto_point = false
-defaults.gaze_watch = true
-defaults.perm_gaze_watch = false
+defaults = {auto_point,auto_gaze,auto_perm_gaze = false,true,false}
 
 settings = config.load(defaults)
 
@@ -27,17 +24,13 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
 perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3,ender=T{4}},["Caturae"]={skills=T{2776},delay=6,ender=T{4,6}},}
 
-gaze = false
-perm_gaze = false
-trigered_actor = 0
-perm_trigered_actor = 0
-mob_type = ""
-test_mode = false
+gaze,perm_gaze,test_mode,trigered_actor,perm_trigered_actor,mob_type = false,false,false,0,0,""
+
 function Print_Settings()
-    print('Gaze_check: auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
-        ' / auto_gaze = '..(settings.gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
-        ' / auto_perm_gaze = '..(settings.perm_gaze_watch and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
-        ''..(test_mode and ('\nGaze_check:   test_mode on'):text_color(0,255,0) or ''))
+    print('Gaze_check: auto_gaze = '..(settings.auto_gaze and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
+        ' / auto_perm_gaze = '..(settings.auto_perm_gaze and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
+        '\n            auto_point = '..(settings.auto_point and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255))..
+        ' / test_mode = '..(test_mode and ('on'):text_color(0,255,0) or ('off'):text_color(255,255,255)))
 end
 windower.register_event('load',function ()
     Print_Settings()
@@ -82,9 +75,9 @@ end
 function check_target_action(packet)
     for i,v in pairs(packet) do
         if string.match(i, 'Target %d+ Action %d+ Param') then
-            if settings.gaze_watch and gaze_attacks[v] then
+            if settings.auto_gaze and gaze_attacks[v] then
                 return true
-            elseif settings.perm_gaze_watch and perm_gaze_attacks[v] then
+            elseif settings.auto_perm_gaze and perm_gaze_attacks[v] then
                 for mob,tbl in pairs(perm_gaze_control) do
                     if tbl.skills:contains(v) then
                         mob_type = mob
@@ -101,16 +94,15 @@ function check_target_action(packet)
     return false
 end
 windower.register_event('incoming chunk', function(id, data, modified, injected, blocked)
-    if id == 0x00E and settings.perm_gaze_watch and perm_gaze then
+    if id == 0x00E and settings.auto_perm_gaze and perm_gaze then
         local packet = packets.parse('incoming', data)
         if packet.Index == perm_trigered_actor then
             local gaze_table = perm_gaze_control[mob_type]
             if gaze_table and (gaze_table.ender:contains(data:unpack('b8', 43)) or packet['Mask'] == 0x20) then
-                gaze = false
-                perm_gaze = false
-                perm_trigered_actor = 0
-                mob_type = ""
+                gage,perm_gaze,perm_trigered_actor,mob_type = false,false,0,""
                 windower.ffxi.turn:schedule(1,(getAngle()+180):radian())
+            elseif test_mode then
+                windower.add_to_chat(7,"Perm Gaze end data = "..tostring(data:unpack('b8', 43)))
             end
         end
     end
@@ -122,12 +114,12 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
                 trigered_actor = packet['Actor']
                 windower.ffxi.turn((getAngle()+180):radian()+math.pi)
             elseif packet['Category'] == 11 and packet['Actor'] == trigered_actor and gaze then
-                if settings.gaze_watch and gaze_attacks[packet['Param']] then
+                if settings.auto_gaze and gaze_attacks[packet['Param']] then
                     gaze = false
                     if not perm_gaze then
                         windower.ffxi.turn:schedule(1,(getAngle()+180):radian())
                     end
-                elseif settings.perm_gaze_watch and perm_gaze_attacks[packet['Param']] then
+                elseif settings.auto_perm_gaze and perm_gaze_attacks[packet['Param']] then
                     perm_trigered_actor = windower.ffxi.get_mob_by_id(packet['Actor']).index
                 end
                 trigered_actor = 0
@@ -135,7 +127,6 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
         end
     end
 end)
-
 function getAngle()
     local P = windower.ffxi.get_mob_by_target('me') --get player
     local M = windower.ffxi.get_mob_by_target('t') --get target
@@ -144,23 +135,18 @@ function getAngle()
     local mult = 10^0
     return math.floor(angleInDegrees * mult + 0.5) / mult
 end
-
 windower.register_event('prerender', function()
-    if not windower.ffxi.get_info().logged_in or not windower.ffxi.get_player() then -- stops prender if not loged in yet
+    local player = windower.ffxi.get_player()
+    if not windower.ffxi.get_info().logged_in or not player then -- stops prender if not loged in yet
         return
     end
-    if (windower.ffxi.get_player().in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t')) and not gaze and not perm_gaze then
+    if (player.in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t')) and not gaze and not perm_gaze then
         windower.ffxi.turn((getAngle()+180):radian())--gets angle to the target
     end
 end)
-
 windower.register_event('addon command', function(command)
-    if command == 'auto_point' then
-        settings.auto_point = not settings.auto_point
-    elseif command == 'auto_gaze' then
-        settings.gaze_watch = not settings.gaze_watch
-    elseif command == 'auto_perm_gaze' then
-        settings.perm_gaze_watch = not settings.perm_gaze_watch
+    if type(settings[command]) == 'boolean' then
+        settings[command] = not settings[command]
     elseif command == 'test_mode' then
         test_mode = not test_mode
     end
