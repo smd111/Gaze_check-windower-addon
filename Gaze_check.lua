@@ -2,13 +2,13 @@ _addon.name = 'Gaze_check'
 _addon.author = 'smd111/Kenshi'
 _addon.command = 'gazecheck'
 _addon.commands = {'gzc'}
-_addon.version = '2.01'
+_addon.version = '2.02'
 
 require 'luau'
 require('vectors')
 packets = require('packets')
 
-defaults = {auto_point,auto_gaze,auto_perm_gaze = false,true,false}
+defaults = {auto_point = false,auto_gaze = true,auto_perm_gaze = false}
 
 settings = config.load(defaults)
 
