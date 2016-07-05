@@ -19,7 +19,8 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [1694]="Vile Belch",[1695]="Hypnic Lamp",[1713]="Yawn",[1716]="Frigid Shuffle",[1759]="Hypnotic Sway",[1762]="Belly Dance",[1862]="Awful Eye",[1883]="Mortal Ray",
 [1950]="Belly Dance",[1978]="Abominable Belch",[2111]="Eternal Damnation",[2155]="Torpefying Charge",[2209]="Blink of Peril",[2424]="Terror Eye",[2466]="Washtub",
 [2570]="Afflicting Gaze",[2534]="Minax Glare",[2610]="Vacant Gaze",[2768]="Deathly Glare",[2814]="Yawn",[2817]="Frigid Shuffle",[2828]="Jettatura",
-[3031]="Sylvan Slumber",[3032]="Crushing Gaze",[3358]="Blank Gaze",[3760]="Beguiling Gaze",[3898]="Chaotic Eye",[3916]="Jettatura"}
+[3031]="Sylvan Slumber",[3032]="Crushing Gaze",[3358]="Blank Gaze",[3760]="Beguiling Gaze",[3898]="Chaotic Eye",[3916]="Jettatura",[4053]="Baleful Gaze",
+[4064]="Yawn",[4067]="Frigid Shuffle",}
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
 perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3,ender=T{4}},["Caturae"]={skills=T{2776},delay=6,ender=T{4,6}},}
@@ -53,7 +54,7 @@ function check_target_id(packet) --checks to see if player is one of the targets
     return false
 end
 function check_facing(packet)
-    local key_indices = {'p0', 'p1','p2','p3','p4','p5','a10','a11','a12','a13','a14','a15','a20','a21','a22','a23','a24','a25'}
+    local key_indices = {'p0','p1','p2','p3','p4','p5','a10','a11','a12','a13','a14','a15','a20','a21','a22','a23','a24','a25'}
     local party = windower.ffxi.get_party()
     local actor = windower.ffxi.get_mob_by_id(packet['Actor'])
     local player = windower.ffxi.get_mob_by_target('me')
@@ -67,13 +68,13 @@ function check_facing(packet)
                 local member = party[key_indices[k]]
                 if member and member.mob and (member.mob.id == v or member.mob.pet_index == index) or actor.id == v then
                     for ind, val in pairs(packet) do  
-                    if angle.player < 90 and angle.actor < 90 then
-                        return true     
-                    elseif string.match(ind, 'Target %d+ Action %d+ Param') then --Turn on gazes than don't need the mob to face you to apply
-                        if T{1694, 1695, 1713, 1716, 1762, 1950, 1978, 2155, 2814, 2817}:contains(val) and angle.player < 90 then
-                            return true
+                        if angle.player < 90 and angle.actor < 90 then
+                            return true     
+                        elseif string.match(ind, 'Target %d+ Action %d+ Param') then --Turn on gazes than don't need the mob to face you to apply
+                            if T{1694, 1695, 1713, 1716, 1762, 1950, 1978, 2155, 2814, 2817, 4064, 4067}:contains(val) and angle.player < 90 then
+                                return true
+                            end
                         end
-                    end
                     end
                 end
             end
