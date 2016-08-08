@@ -70,7 +70,7 @@ function check_facing(packet)
                         if angle.player < 90 and angle.actor < 90 then
                             return true     
                         elseif string.match(ind, 'Target %d+ Action %d+ Param') then --Turn on gazes than don't need the mob to face you to apply
-                            if T{1694, 1695, 1713, 1716, 1762, 1950, 1978, 2155, 2814, 2817, 4064, 4067}:contains(val) and angle.player < 90 then
+                            if T{1694, 1695, 1713, 1716, 1762, 1950, 1978, 2155, 2814, 2817}:contains(val) and angle.player < 90 then
                                 return true
                             end
                         end
