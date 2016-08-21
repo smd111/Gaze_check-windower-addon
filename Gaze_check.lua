@@ -18,7 +18,7 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [1184]="Petro Eyes",[1322]="Gerjis' Grip",[1359]="Chthonian Ray",[1360]="Apocalyptic Ray",[1563]="Cold Stare",[1603]="Baleful Gaze",[1680]="Predatory Glare",
 [1694]="Vile Belch",[1695]="Hypnic Lamp",[1713]="Yawn",[1716]="Frigid Shuffle",[1759]="Hypnotic Sway",[1762]="Belly Dance",[1862]="Awful Eye",[1883]="Mortal Ray",
 [1950]="Belly Dance",[1978]="Abominable Belch",[2111]="Eternal Damnation",[2155]="Torpefying Charge",[2209]="Blink of Peril",[2424]="Terror Eye",[2466]="Washtub",
-[2570]="Afflicting Gaze",[2534]="Minax Glare",[2610]="Vacant Gaze",[2768]="Deathly Glare",[2814]="Yawn",[2817]="Frigid Shuffle",[2828]="Jettatura",
+[2570]="Afflicting Gaze",[2534]="Minax Glare",[2602]="Mortal Blast",[2610]="Vacant Gaze",[2768]="Deathly Glare",[2814]="Yawn",[2817]="Frigid Shuffle",[2828]="Jettatura",
 [3031]="Sylvan Slumber",[3032]="Crushing Gaze",[3358]="Blank Gaze",[3760]="Beguiling Gaze",[3898]="Chaotic Eye",[3916]="Jettatura",}
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
@@ -110,8 +110,8 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
         local packet = packets.parse('incoming', data)
         if packet.Index == perm_trigered_actor then
             local gaze_table = perm_gaze_control[mob_type]
-            if gaze_table and (gaze_table.ender:contains(data:unpack('b8', 43)) or packet['Mask'] == 0x20) then
-                gage,perm_gaze,perm_trigered_actor,mob_type = false,false,0,""
+            if gaze_table and (gaze_table.ender:contains(data:unpack('b8', 43)) or (packet['Status'] == 2 or packet['Status'] == 3)) then
+                gaze,perm_gaze,perm_trigered_actor,mob_type = false,false,0,""
                 windower.ffxi.turn:schedule(1,(getAngle()+180):radian())
             elseif test_mode then
                 windower.add_to_chat(7,"Perm Gaze end data = "..tostring(data:unpack('b8', 43)))
