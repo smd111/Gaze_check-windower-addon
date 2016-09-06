@@ -105,6 +105,13 @@ function check_target_action(packet)
     end
     return false
 end
+function NotDead()
+    local player = windower.ffxi.get_player()
+    if player.status ~= 2 and player.status ~= 3 then
+       return true
+    end
+    return false
+end
 windower.register_event('incoming chunk', function(id, data, modified, injected, blocked)
     if id == 0x00E and settings.auto_perm_gaze and perm_gaze then
         local packet = packets.parse('incoming', data)
@@ -112,7 +119,9 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
             local gaze_table = perm_gaze_control[mob_type]
             if gaze_table and (gaze_table.ender:contains(data:unpack('b8', 43)) or (packet['Status'] == 2 or packet['Status'] == 3)) then
                 gaze,perm_gaze,perm_trigered_actor,mob_type = false,false,0,""
-                windower.ffxi.turn:schedule(1,(getAngle()+180):radian())
+                if NotDead() then
+                    windower.ffxi.turn:schedule(1,(getAngle()+180):radian())
+                end
             elseif test_mode then
                 windower.add_to_chat(7,"Perm Gaze end data = "..tostring(data:unpack('b8', 43)))
             end
@@ -124,11 +133,15 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
             if packet['Category'] == 7 and not pet_check(packet['Actor']) and (check_target_id(packet) or check_facing(packet)) and check_target_action(packet) then
                 gaze = true
                 trigered_actor = packet['Actor']
-                windower.ffxi.turn((getAngle(packet['Actor'])+180):radian()+math.pi)
+                if NotDead() then
+                    windower.ffxi.turn((getAngle(packet['Actor'])+180):radian()+math.pi)
+                end
             elseif packet['Category'] == 11 and packet['Actor'] == trigered_actor and gaze then
                 if settings.auto_gaze and gaze_attacks[packet['Param']] and not perm_gaze then
                     gaze = false
-                    windower.ffxi.turn:schedule(1,(getAngle()+180):radian())
+                    if NotDead() then   
+                        windower.ffxi.turn:schedule(1,(getAngle()+180):radian())
+                    end
                 elseif settings.auto_perm_gaze and perm_gaze_attacks[packet['Param']] then
                     perm_trigered_actor = windower.ffxi.get_mob_by_id(packet['Actor']).index
                 end
@@ -150,7 +163,7 @@ windower.register_event('prerender', function()
     if not windower.ffxi.get_info().logged_in or not player then -- stops prender if not loged in yet
         return
     end
-    if (player.in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t')) and not gaze and not perm_gaze then
+    if (player.in_combat and settings.auto_point and windower.ffxi.get_mob_by_target('t') and NotDead()) and not gaze and not perm_gaze then
         windower.ffxi.turn((getAngle()+180):radian())--gets angle to the target
     end
 end)
