@@ -17,9 +17,10 @@ gaze_attacks = {[284]="Cold Stare",[292]="Blank Gaze",[370]="Baleful Gaze",[386]
 [785]="Light of Penance",[1111]="Numbing Glare",[1113]="Tormentful Glare",[1115]="Torpid Glare",[1138]="Hypnosis",[1139]="Mind Break",[1174]="Petro Eyes",
 [1184]="Petro Eyes",[1322]="Gerjis' Grip",[1359]="Chthonian Ray",[1360]="Apocalyptic Ray",[1563]="Cold Stare",[1603]="Baleful Gaze",[1680]="Predatory Glare",
 [1694]="Vile Belch",[1695]="Hypnic Lamp",[1713]="Yawn",[1716]="Frigid Shuffle",[1759]="Hypnotic Sway",[1762]="Belly Dance",[1862]="Awful Eye",[1883]="Mortal Ray",
-[1950]="Belly Dance",[1978]="Abominable Belch",[2111]="Eternal Damnation",[2155]="Torpefying Charge",[2209]="Blink of Peril",[2424]="Terror Eye",[2466]="Washtub",
-[2570]="Afflicting Gaze",[2534]="Minax Glare",[2602]="Mortal Blast",[2610]="Vacant Gaze",[2768]="Deathly Glare",[2814]="Yawn",[2817]="Frigid Shuffle",[2828]="Jettatura",
-[3031]="Sylvan Slumber",[3032]="Crushing Gaze",[3358]="Blank Gaze",[3760]="Beguiling Gaze",[3898]="Chaotic Eye",[3916]="Jettatura",[4033]="Vile Belch",[4034]="Hypnic Lamp",}
+[1950]="Belly Dance",[1978]="Abominable Belch",[2111]="Eternal Damnation",[2155]="Torpefying Charge",[2209]="Blink of Peril",[2424]="Terror Eye",[2465]="Bill Toss",
+[2466]="Washtub",[2570]="Afflicting Gaze",[2534]="Minax Glare",[2602]="Mortal Blast",[2610]="Vacant Gaze",[2768]="Deathly Glare",[2814]="Yawn",[2817]="Frigid Shuffle",
+[2828]="Jettatura",[3031]="Sylvan Slumber",[3032]="Crushing Gaze",[3358]="Blank Gaze",[3760]="Beguiling Gaze",[3898]="Chaotic Eye",[3916]="Jettatura",
+[3986]="Petro Eyes",[4089]="Bill Toss",[4090]="Washtub",}
 
 perm_gaze_attacks = {[2156]="Grim Glower",[2392]="Oppressive Glare",[2776]="Shah Mat",}
 perm_gaze_control = {["Peiste"]={skills=T{2156, 2392},delay=3,ender=T{4}},["Caturae"]={skills=T{2776},delay=6,ender=T{4,6}},}
